@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lenya — управление заявками</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="logo">🚛 <span>Lenya</span></a>
+    <nav class="nav">
+      <a href="#/" data-nav="home">Главная</a>
+      <a href="#/board" data-nav="board">Доска</a>
+      <a href="#/drivers" data-nav="drivers">Водители</a>
+    </nav>
+  </header>
+
+  <main id="app" class="container"></main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ============ Главный экран: выбор действия ============ -->
+  <template id="tpl-home">
+    <div class="home">
+      <h1>Что нужно сделать?</h1>
+      <p class="muted">Выберите действие, дальше всё по шагам.</p>
+      <div class="home-actions">
+        <a href="#/new-order" class="action-card">
+          <div class="action-icon">📋</div>
+          <div class="action-title">Создать заявку</div>
+          <div class="action-desc">Выберите водителя из списка или добавьте нового и оформите рейс</div>
+        </a>
+        <a href="#/new-driver" class="action-card">
+          <div class="action-icon">👤</div>
+          <div class="action-title">Добавить водителя</div>
+          <div class="action-desc">Новый водитель в базе: ФИО, телефон, машина, номер</div>
+        </a>
+        <a href="#/board" class="action-card">
+          <div class="action-icon">🗂️</div>
+          <div class="action-title">Доска</div>
+          <div class="action-desc">Все водители и их активные заявки на одном экране</div>
+        </a>
+      </div>
+    </div>
+  </template>
+
+  <!-- ============ Мастер: создание заявки ============ -->
+  <template id="tpl-wizard-order">
+    <div class="wizard">
+      <div class="steps">
+        <div class="step" data-step-dot="1"><span class="dot">1</span><span class="step-label">Водитель</span></div>
+        <div class="step-line"></div>
+        <div class="step" data-step-dot="2"><span class="dot">2</span><span class="step-label">Детали рейса</span></div>
+        <div class="step-line"></div>
+        <div class="step" data-step-dot="3"><span class="dot">3</span><span class="step-label">Подтверждение</span></div>
+      </div>
+
+      <!-- Шаг 1: выбор водителя -->
+      <section class="wizard-step" data-step="1">
+        <h2>Шаг 1. Кто поедет?</h2>
+        <div class="driver-choice-tabs">
+          <button class="tab active" data-tab="existing">Из списка</button>
+          <button class="tab" data-tab="new">Новый водитель</button>
+        </div>
+
+        <div class="tab-pane" data-pane="existing">
+          <input type="search" id="driver-search" class="input" placeholder="Поиск по имени, машине, номеру…" />
+          <div id="driver-list" class="driver-list"></div>
+        </div>
+
+        <div class="tab-pane hidden" data-pane="new">
+          <div class="form-grid">
+            <label>ФИО *<input class="input" name="nd_full_name" placeholder="Иванов Иван Иванович" /></label>
+            <label>Телефон<input class="input" name="nd_phone" placeholder="+7 900 000-00-00" /></label>
+            <label>Машина<input class="input" name="nd_vehicle" placeholder="КамАЗ 65115" /></label>
+            <label>Госномер<input class="input" name="nd_plate" placeholder="А123БВ 77" /></label>
+          </div>
+        </div>
+
+        <div class="wizard-nav">
+          <a href="#/" class="btn btn-ghost">Отмена</a>
+          <button class="btn btn-primary" data-action="step1-next">Далее →</button>
+        </div>
+      </section>
+
+      <!-- Шаг 2: детали рейса -->
+      <section class="wizard-step hidden" data-step="2">
+        <h2>Шаг 2. Детали рейса</h2>
+        <div class="form-grid">
+          <label>Откуда *<input class="input" name="o_origin" placeholder="Москва, склад №3" /></label>
+          <label>Куда *<input class="input" name="o_destination" placeholder="Санкт-Петербург" /></label>
+          <label>Груз<input class="input" name="o_cargo" placeholder="Стройматериалы, 12 т" /></label>
+          <label>Дата рейса<input class="input" type="date" name="o_date" /></label>
+          <label>Оплата<input class="input" name="o_price" placeholder="45 000 ₽" /></label>
+          <label class="full">Комментарий<textarea class="input" name="o_comment" rows="3" placeholder="Особые условия, контакты на месте…"></textarea></label>
+        </div>
+        <div class="wizard-nav">
+          <button class="btn btn-ghost" data-action="step2-back">← Назад</button>
+          <button class="btn btn-primary" data-action="step2-next">Далее →</button>
+        </div>
+      </section>
+
+      <!-- Шаг 3: подтверждение -->
+      <section class="wizard-step hidden" data-step="3">
+        <h2>Шаг 3. Всё верно?</h2>
+        <div id="order-summary" class="summary"></div>
+        <div class="wizard-nav">
+          <button class="btn btn-ghost" data-action="step3-back">← Назад</button>
+          <button class="btn btn-success" data-action="step3-submit">✓ Создать заявку</button>
+        </div>
+      </section>
+
+      <!-- Готово -->
+      <section class="wizard-step hidden" data-step="done">
+        <div class="done-box">
+          <div class="done-icon">✅</div>
+          <h2>Заявка создана!</h2>
+          <p class="muted" id="done-text"></p>
+          <div class="done-actions">
+            <a href="#/board" class="btn btn-primary">Открыть доску</a>
+            <a href="#/new-order" class="btn btn-ghost" data-action="restart">Ещё заявка</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </template>
+
+  <!-- ============ Мастер: добавление водителя ============ -->
+  <template id="tpl-wizard-driver">
+    <div class="wizard">
+      <div class="steps">
+        <div class="step" data-step-dot="1"><span class="dot">1</span><span class="step-label">Данные</span></div>
+        <div class="step-line"></div>
+        <div class="step" data-step-dot="2"><span class="dot">2</span><span class="step-label">Транспорт</span></div>
+        <div class="step-line"></div>
+        <div class="step" data-step-dot="3"><span class="dot">3</span><span class="step-label">Подтверждение</span></div>
+      </div>
+
+      <section class="wizard-step" data-step="1">
+        <h2>Шаг 1. Данные водителя</h2>
+        <div class="form-grid">
+          <label>ФИО *<input class="input" name="d_full_name" placeholder="Иванов Иван Иванович" /></label>
+          <label>Телефон<input class="input" name="d_phone" placeholder="+7 900 000-00-00" /></label>
+          <label class="full">Заметка<textarea class="input" name="d_note" rows="2" placeholder="Например: работает по выходным"></textarea></label>
+        </div>
+        <div class="wizard-nav">
+          <a href="#/" class="btn btn-ghost">Отмена</a>
+          <button class="btn btn-primary" data-action="d-step1-next">Далее →</button>
+        </div>
+      </section>
+
+      <section class="wizard-step hidden" data-step="2">
+        <h2>Шаг 2. Транспорт</h2>
+        <div class="form-grid">
+          <label>Машина<input class="input" name="d_vehicle" placeholder="КамАЗ 65115" /></label>
+          <label>Госномер<input class="input" name="d_plate" placeholder="А123БВ 77" /></label>
+          <label>Категории прав<input class="input" name="d_license" placeholder="B, C, CE" /></label>
+        </div>
+        <div class="wizard-nav">
+          <button class="btn btn-ghost" data-action="d-step2-back">← Назад</button>
+          <button class="btn btn-primary" data-action="d-step2-next">Далее →</button>
+        </div>
+      </section>
+
+      <section class="wizard-step hidden" data-step="3">
+        <h2>Шаг 3. Всё верно?</h2>
+        <div id="driver-summary" class="summary"></div>
+        <div class="wizard-nav">
+          <button class="btn btn-ghost" data-action="d-step3-back">← Назад</button>
+          <button class="btn btn-success" data-action="d-step3-submit">✓ Добавить водителя</button>
+        </div>
+      </section>
+
+      <section class="wizard-step hidden" data-step="done">
+        <div class="done-box">
+          <div class="done-icon">✅</div>
+          <h2>Водитель добавлен!</h2>
+          <p class="muted" id="d-done-text"></p>
+          <div class="done-actions">
+            <a href="#/new-order" class="btn btn-primary">Создать ему заявку</a>
+            <a href="#/drivers" class="btn btn-ghost">К списку водителей</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </template>
+
+  <!-- ============ Доска ============ -->
+  <template id="tpl-board">
+    <div class="board-page">
+      <div class="page-head">
+        <h1>Доска</h1>
+        <div class="board-filters">
+          <button class="chip active" data-filter="active">Активные</button>
+          <button class="chip" data-filter="all">Все заявки</button>
+        </div>
+      </div>
+      <div id="board" class="board"></div>
+    </div>
+  </template>
+
+  <!-- ============ Список водителей ============ -->
+  <template id="tpl-drivers">
+    <div class="drivers-page">
+      <div class="page-head">
+        <h1>Водители</h1>
+        <a href="#/new-driver" class="btn btn-primary">+ Добавить</a>
+      </div>
+      <div id="drivers-table" class="drivers-table"></div>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>

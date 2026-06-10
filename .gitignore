@@ -1,0 +1,5 @@
+lenya.db
+lenya.db-shm
+lenya.db-wal
+node_modules/
+.DS_Store
