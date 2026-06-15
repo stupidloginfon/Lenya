@@ -15,11 +15,11 @@ import json
 import random
 from pathlib import Path
 
-import anthropic
-import edge_tts
-
 import config
 from pipeline import db, ffmpeg_utils
+
+# anthropic и edge_tts импортируются лениво внутри функций — сборке видео
+# (assemble_video) они не нужны, а зависимости тяжёлые.
 
 _SCRIPT_SCHEMA = {
     "type": "object",
@@ -38,6 +38,8 @@ _SCRIPT_SCHEMA = {
 
 
 def _write_script(row, topic: str) -> dict:
+    import anthropic
+
     analysis = json.loads(row["analysis_json"]) if row["analysis_json"] else {}
     template = analysis.get("reusable_template", row["hook_text"] or "")
     client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
@@ -66,6 +68,8 @@ def _write_script(row, topic: str) -> dict:
 
 
 async def _tts(text: str, dst: Path) -> None:
+    import edge_tts
+
     communicate = edge_tts.Communicate(text, config.TTS_VOICE)
     await communicate.save(str(dst))
 
@@ -105,27 +109,19 @@ def _pick_background(row) -> Path:
     raise RuntimeError("Нет фона: положи .mp4 в BROLL_DIR или скачай исходник")
 
 
-def generate(video_id: int, topic: str) -> Path:
-    """Сгенерировать новое видео. Возвращает путь к mp4."""
+def assemble_video(
+    segments: list[str], voice_path: Path, background: Path, out_path: Path
+) -> Path:
+    """Собрать вертикальное видео из готовых частей: фон + озвучка + субтитры.
+
+    Эта функция не зависит ни от Claude, ни от БД — её удобно дёргать и из боевого
+    `generate()`, и из офлайн-демо (tools/demo.py).
+    """
     ffmpeg_utils.ensure_ffmpeg()
-    row = db.get(video_id)
-    if row is None:
-        raise ValueError(f"video {video_id} не найден")
-
-    config.ensure_dirs()
-    script = _write_script(row, topic)
-    print(f"[generate] [{video_id}] сценарий: {script['title']}")
-
-    narration = " ".join(script["segments"])
-    voice_path = config.OUTPUTS_DIR / f"{video_id}_voice.mp3"
-    asyncio.run(_tts(narration, voice_path))
     voice_dur = ffmpeg_utils.probe_duration(voice_path)
 
-    srt_path = config.OUTPUTS_DIR / f"{video_id}.srt"
-    _make_srt(script["segments"], voice_dur, srt_path)
-
-    background = _pick_background(row)
-    out_path = config.OUTPUTS_DIR / f"{video_id}_final.mp4"
+    srt_path = out_path.with_suffix(".srt")
+    _make_srt(segments, voice_dur, srt_path)
 
     # Фон зацикливаем/обрезаем под длину озвучки, кадрируем в вертикаль 1080x1920,
     # выжигаем субтитры и подкладываем новую озвучку.
@@ -147,6 +143,27 @@ def generate(video_id: int, topic: str) -> Path:
         "-c:a", "aac", "-shortest",
         str(out_path),
     ])
+    return out_path
+
+
+def generate(video_id: int, topic: str) -> Path:
+    """Сгенерировать новое видео. Возвращает путь к mp4."""
+    ffmpeg_utils.ensure_ffmpeg()
+    row = db.get(video_id)
+    if row is None:
+        raise ValueError(f"video {video_id} не найден")
+
+    config.ensure_dirs()
+    script = _write_script(row, topic)
+    print(f"[generate] [{video_id}] сценарий: {script['title']}")
+
+    narration = " ".join(script["segments"])
+    voice_path = config.OUTPUTS_DIR / f"{video_id}_voice.mp3"
+    asyncio.run(_tts(narration, voice_path))
+
+    background = _pick_background(row)
+    out_path = config.OUTPUTS_DIR / f"{video_id}_final.mp4"
+    assemble_video(script["segments"], voice_path, background, out_path)
 
     # Сохраним заголовок и хэштеги — пригодятся при загрузке.
     meta = {"title": script["title"], "hashtags": script["hashtags"]}
