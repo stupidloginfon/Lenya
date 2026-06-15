@@ -1,5 +1,18 @@
-lenya.db
-lenya.db-shm
-lenya.db-wal
-node_modules/
-.DS_Store
+# Секреты
+.env
+
+# Виртуальное окружение
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Данные пайплайна (скачанные видео, результаты, БД)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Токены OAuth для загрузки
+*.token.json
+client_secret*.json
