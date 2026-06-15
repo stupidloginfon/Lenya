@@ -1,8 +1,11 @@
 # --- Ядро пайплайна ---
-anthropic>=0.49            # анализ хуков и генерация сценариев через Claude
 yt-dlp>=2024.1.0           # скачивание видео из TikTok / Shorts / Reels
 python-dotenv>=1.0         # загрузка настроек из .env
 requests>=2.31
+
+# --- LLM-провайдеры (анализ хука + сценарий) ---
+openai>=1.40              # для Groq / Gemini / OpenRouter / Ollama (OpenAI-совместимые)
+anthropic>=0.49           # только если LLM_PROVIDER=claude
 
 # --- Озвучка ---
 edge-tts>=6.1              # нейроголоса Microsoft (TTS_ENGINE=edge, нужна сеть)

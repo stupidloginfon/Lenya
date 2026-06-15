@@ -11,7 +11,15 @@ def _path(value: str) -> Path:
     return Path(value).expanduser().resolve()
 
 
-# --- Claude ---
+# --- LLM-провайдер (анализ хука + генерация сценария) ---
+# claude | groq | gemini | openrouter | ollama
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
+# Переопределения (если пусто — берётся пресет провайдера из pipeline/llm.py):
+LLM_MODEL = os.getenv("LLM_MODEL", "")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+
+# --- Claude (используется только при LLM_PROVIDER=claude) ---
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-4-8")
 

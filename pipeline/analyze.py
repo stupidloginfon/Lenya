@@ -9,10 +9,8 @@ import json
 from pathlib import Path
 from typing import Optional
 
-import anthropic
-
 import config
-from pipeline import db, ffmpeg_utils
+from pipeline import db, ffmpeg_utils, llm
 
 # Сколько секунд от начала считаем «хуком».
 HOOK_SECONDS = 5.0
@@ -65,27 +63,21 @@ def transcribe_hook(video_path: Path) -> str:
     return " ".join(seg.text.strip() for seg in segments).strip()
 
 
-def _ask_claude(hook_text: str, row) -> dict:
-    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+def _ask_llm(hook_text: str, row) -> dict:
     context = (
         f"Платформа: {row['platform']}\n"
         f"Заголовок: {row['title']}\n"
         f"Просмотры: {row['views']}, лайки: {row['likes']}, комментарии: {row['comments']}\n"
         f"Текст хука (первые {HOOK_SECONDS:.0f} сек): {hook_text or '(нет транскрипции)'}"
     )
-    resp = client.messages.create(
-        model=config.CLAUDE_MODEL,
-        max_tokens=2000,
+    return llm.complete_json(
         system=(
             "Ты — эксперт по короткому видеоконтенту (TikTok/Shorts/Reels). "
-            "Анализируешь хук (первые секунды) и оцениваешь его виральный потенциал. "
-            "Отвечай строго по схеме."
+            "Анализируешь хук (первые секунды) и оцениваешь его виральный потенциал."
         ),
-        messages=[{"role": "user", "content": context}],
-        output_config={"format": {"type": "json_schema", "schema": _HOOK_SCHEMA}},
+        user=context,
+        schema=_HOOK_SCHEMA,
     )
-    text = next(b.text for b in resp.content if b.type == "text")
-    return json.loads(text)
 
 
 def analyze(video_id: int) -> dict:
@@ -95,7 +87,7 @@ def analyze(video_id: int) -> dict:
         raise ValueError(f"video {video_id}: сначала скачай ролик (download)")
 
     hook_text = transcribe_hook(Path(row["download_path"]))
-    analysis = _ask_claude(hook_text, row)
+    analysis = _ask_llm(hook_text, row)
 
     claude_score = float(analysis.get("hook_score", 0))
     eng = _engagement_score(row)

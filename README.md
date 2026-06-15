@@ -16,8 +16,8 @@ discover → download → analyze → generate → advertise → upload
 |---|---|---|
 | **discover** | собирает список трендовых роликов по запросам/хэштегам | `yt-dlp` |
 | **download** | качает исходник + метрики (просмотры/лайки) | `yt-dlp` |
-| **analyze** | транскрибирует первые 5 сек, оценивает «виральность» хука и достаёт переиспользуемый шаблон | `faster-whisper` + Claude |
-| **generate** | пишет новый сценарий по шаблону хука, озвучивает, собирает вертикальное видео с субтитрами | Claude + `edge-tts` + `ffmpeg` |
+| **analyze** | транскрибирует первые 5 сек, оценивает «виральность» хука и достаёт переиспользуемый шаблон | `faster-whisper` + LLM |
+| **generate** | пишет новый сценарий по шаблону хука, озвучивает, собирает вертикальное видео с субтитрами | LLM + TTS + `ffmpeg` |
 | **advertise** | накладывает баннер с CTA и/или вклеивает рекламный ролик | `ffmpeg` |
 | **upload** | публикует на YouTube (готово), TikTok/Instagram (заготовки) | YouTube Data API |
 
@@ -30,7 +30,7 @@ discover → download → analyze → generate → advertise → upload
    - Ubuntu/Debian: `sudo apt install ffmpeg`
    - macOS: `brew install ffmpeg`
    - Windows: `winget install ffmpeg`
-3. **Ключ Claude** — [console.anthropic.com](https://console.anthropic.com) → в `.env`
+3. **Ключ LLM-провайдера** — бесплатно (Groq по умолчанию) или платно (Claude). См. ниже.
 4. *(опц.)* **OAuth-файл Google** для загрузки на YouTube
 5. *(опц.)* шрифт `.ttf` для баннера рекламы (обычно уже есть в системе)
 
@@ -45,6 +45,22 @@ cp .env.example .env        # и впиши ANTHROPIC_API_KEY
 
 > `faster-whisper` тяжёлый. Если не нужна транскрипция хука — можешь его не ставить,
 > пайплайн отработает без текста хука (оценка пойдёт только по метрикам + заголовку).
+
+### LLM-провайдер (бесплатно или на Claude)
+
+Анализ хука и генерация сценария идут через единый адаптер (`pipeline/llm.py`).
+Провайдер выбирается одной строкой `LLM_PROVIDER` в `.env`:
+
+| Провайдер | Цена | Где взять ключ | Модель по умолчанию |
+|---|---|---|---|
+| `groq` *(дефолт)* | бесплатно, без карты | [console.groq.com](https://console.groq.com) → `GROQ_API_KEY` | `llama-3.3-70b-versatile` |
+| `gemini` | бесплатный тариф | [aistudio.google.com](https://aistudio.google.com) → `GEMINI_API_KEY` | `gemini-2.0-flash` |
+| `openrouter` | есть модели `:free` | [openrouter.ai](https://openrouter.ai) → `OPENROUTER_API_KEY` | `llama-3.3-70b-instruct:free` |
+| `ollama` | бесплатно, офлайн | ключ не нужен, `ollama serve` | `qwen2.5` |
+| `claude` | платно | [console.anthropic.com](https://console.anthropic.com) → `ANTHROPIC_API_KEY` | `claude-opus-4-8` |
+
+Модель/URL можно переопределить через `LLM_MODEL` / `LLM_BASE_URL` / `LLM_API_KEY`.
+Для старта: получи бесплатный ключ Groq, впиши `GROQ_API_KEY=...` в `.env` — готово.
 
 ### Озвучка
 
@@ -97,8 +113,9 @@ python main.py run "тренды о деньгах" --topic "мой телегр
 
 | Переменная | Зачем |
 |---|---|
-| `ANTHROPIC_API_KEY` | ключ Claude (обязательно) |
-| `CLAUDE_MODEL` | модель, по умолчанию `claude-opus-4-8` |
+| `LLM_PROVIDER` | провайдер LLM: `groq` (дефолт) / `gemini` / `openrouter` / `ollama` / `claude` |
+| `GROQ_API_KEY` и т.п. | ключ выбранного провайдера (для `claude` — `ANTHROPIC_API_KEY`) |
+| `LLM_MODEL` | переопределить модель провайдера (необязательно) |
 | `BROLL_DIR` | папка с твоими фоновыми клипами `.mp4` |
 | `TTS_ENGINE` | движок озвучки: `edge` (нейроголоса Microsoft) или `piper` (офлайн) |
 | `TTS_VOICE` | голос для edge (`edge-tts --list-voices`) |

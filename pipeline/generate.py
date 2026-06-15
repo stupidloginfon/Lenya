@@ -16,10 +16,9 @@ import random
 from pathlib import Path
 
 import config
-from pipeline import db, ffmpeg_utils
+from pipeline import db, ffmpeg_utils, llm
 
-# anthropic и edge_tts импортируются лениво внутри функций — сборке видео
-# (assemble_video) они не нужны, а зависимости тяжёлые.
+# edge_tts импортируется лениво внутри функции — сборке видео он не нужен.
 
 _SCRIPT_SCHEMA = {
     "type": "object",
@@ -38,33 +37,23 @@ _SCRIPT_SCHEMA = {
 
 
 def _write_script(row, topic: str) -> dict:
-    import anthropic
-
     analysis = json.loads(row["analysis_json"]) if row["analysis_json"] else {}
     template = analysis.get("reusable_template", row["hook_text"] or "")
-    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-    resp = client.messages.create(
-        model=config.CLAUDE_MODEL,
-        max_tokens=2000,
+    return llm.complete_json(
         system=(
             "Ты — сценарист коротких вертикальных видео. По шаблону залетевшего хука "
             "пишешь новый оригинальный сценарий под заданную тему. Пиши живо, разговорно, "
             "под озвучку. 5-9 коротких реплик, всего на 20-40 секунд. Не копируй исходник "
             "дословно — переноси только приём хука."
         ),
-        messages=[{
-            "role": "user",
-            "content": (
-                f"Шаблон хука: {template}\n"
-                f"Почему он работает: {analysis.get('why_it_works', '')}\n\n"
-                f"Тема/продукт для нового видео: {topic}\n\n"
-                "Сделай сценарий по схеме."
-            ),
-        }],
-        output_config={"format": {"type": "json_schema", "schema": _SCRIPT_SCHEMA}},
+        user=(
+            f"Шаблон хука: {template}\n"
+            f"Почему он работает: {analysis.get('why_it_works', '')}\n\n"
+            f"Тема/продукт для нового видео: {topic}\n\n"
+            "Сделай сценарий по схеме."
+        ),
+        schema=_SCRIPT_SCHEMA,
     )
-    text = next(b.text for b in resp.content if b.type == "text")
-    return json.loads(text)
 
 
 def _synthesize(text: str, dst: Path) -> None:

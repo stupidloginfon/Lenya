@@ -17,7 +17,7 @@ import argparse
 import sys
 
 import config
-from pipeline import advertise, analyze, db, discover, download, generate, upload
+from pipeline import advertise, analyze, db, discover, download, generate, llm, upload
 
 
 def _ids(args, default_status: str) -> list[int]:
@@ -163,8 +163,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main():
     args = build_parser().parse_args()
-    if args.cmd in {"analyze", "generate", "run"} and not config.ANTHROPIC_API_KEY:
-        sys.exit("Нет ANTHROPIC_API_KEY. Скопируй .env.example в .env и заполни ключ.")
+    if args.cmd in {"analyze", "generate", "run"}:
+        ok, hint = llm.is_ready()
+        if not ok:
+            sys.exit(f"LLM-провайдер не настроен ({config.LLM_PROVIDER}): {hint}")
     config.ensure_dirs()
     args.func(args)
 
