@@ -46,6 +46,24 @@ cp .env.example .env        # и впиши ANTHROPIC_API_KEY
 > `faster-whisper` тяжёлый. Если не нужна транскрипция хука — можешь его не ставить,
 > пайплайн отработает без текста хука (оценка пойдёт только по метрикам + заголовку).
 
+### Озвучка
+
+Два варианта на выбор (`TTS_ENGINE` в `.env`):
+
+- **edge** (по умолчанию) — нейроголоса Microsoft, звучат отлично, но нужна сеть.
+- **piper** — офлайн-нейросеть, тоже звучит естественно, работает без интернета.
+  Скачай модель голоса и укажи путь в `PIPER_MODEL`:
+  ```bash
+  mkdir -p assets/voices && cd assets/voices
+  BASE=https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium
+  curl -fLO $BASE/ru_RU-dmitri-medium.onnx
+  curl -fLO $BASE/ru_RU-dmitri-medium.onnx.json
+  # затем в .env:  TTS_ENGINE=piper  PIPER_MODEL=./assets/voices/ru_RU-dmitri-medium.onnx
+  ```
+
+> `tools/demo.py` сам подхватит модель из `assets/voices/` или `PIPER_MODEL`, иначе
+> откатится на espeak-ng (звучит роботизированно — только для проверки сборки).
+
 ## Использование
 
 ```bash
@@ -82,7 +100,9 @@ python main.py run "тренды о деньгах" --topic "мой телегр
 | `ANTHROPIC_API_KEY` | ключ Claude (обязательно) |
 | `CLAUDE_MODEL` | модель, по умолчанию `claude-opus-4-8` |
 | `BROLL_DIR` | папка с твоими фоновыми клипами `.mp4` |
-| `TTS_VOICE` | голос озвучки (`edge-tts --list-voices`) |
+| `TTS_ENGINE` | движок озвучки: `edge` (нейроголоса Microsoft) или `piper` (офлайн) |
+| `TTS_VOICE` | голос для edge (`edge-tts --list-voices`) |
+| `PIPER_MODEL` | путь к `.onnx` модели для piper |
 | `AD_TEXT` | текст баннера-рекламы |
 | `AD_CLIP` | путь к рекламному ролику для вклейки в конец |
 | `WHISPER_MODEL` | размер модели транскрипции (`tiny`…`large-v3`) |

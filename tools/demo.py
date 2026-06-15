@@ -49,11 +49,27 @@ def make_background(dst: Path) -> Path:
     return dst
 
 
+def _find_piper_model() -> str:
+    """Найти .onnx модель Piper: из PIPER_MODEL или из ./assets/voices/*.onnx."""
+    if config.PIPER_MODEL and Path(config.PIPER_MODEL).exists():
+        return config.PIPER_MODEL
+    voices = sorted(Path("assets/voices").glob("*.onnx")) if Path("assets/voices").exists() else []
+    return str(voices[0]) if voices else ""
+
+
 def make_voice(text: str, dst: Path) -> Path:
-    """Озвучка офлайн через espeak-ng; если его нет — дорожка тишины."""
-    if shutil.which("espeak-ng"):
+    """Озвучка офлайн: сначала Piper (нейроголос), потом espeak-ng, потом тишина."""
+    model = _find_piper_model()
+    if model and shutil.which("piper"):
         subprocess.run(
-            ["espeak-ng", "-v", "ru", "-s", "155", "-p", "45", "-w", str(dst), text],
+            ["piper", "--model", model, "--output_file", str(dst)],
+            input=text.encode("utf-8"), check=True,
+        )
+    elif shutil.which("espeak-ng"):
+        print("[demo] Piper-модель не найдена — озвучка через espeak-ng (роботизированно)")
+        subprocess.run(
+            ["espeak-ng", "-v", "ru", "-s", "155", "-p", "45", "-a", "190",
+             "-w", str(dst), text],
             check=True,
         )
     else:

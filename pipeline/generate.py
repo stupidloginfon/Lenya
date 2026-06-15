@@ -67,11 +67,24 @@ def _write_script(row, topic: str) -> dict:
     return json.loads(text)
 
 
-async def _tts(text: str, dst: Path) -> None:
-    import edge_tts
+def _synthesize(text: str, dst: Path) -> None:
+    """Озвучить текст выбранным движком (config.TTS_ENGINE)."""
+    if config.TTS_ENGINE == "piper":
+        import subprocess
 
-    communicate = edge_tts.Communicate(text, config.TTS_VOICE)
-    await communicate.save(str(dst))
+        if not config.PIPER_MODEL:
+            raise RuntimeError("TTS_ENGINE=piper, но PIPER_MODEL не задан (путь к .onnx)")
+        subprocess.run(
+            ["piper", "--model", config.PIPER_MODEL, "--output_file", str(dst)],
+            input=text.encode("utf-8"), check=True,
+        )
+    else:
+        import edge_tts
+
+        async def _run():
+            await edge_tts.Communicate(text, config.TTS_VOICE).save(str(dst))
+
+        asyncio.run(_run())
 
 
 def _make_srt(segments: list[str], total: float, dst: Path) -> None:
@@ -139,8 +152,12 @@ def assemble_video(
         "-t", str(voice_dur),
         "-map", "0:v:0", "-map", "1:a:0",
         "-vf", vf,
+        # Голос нормализуем по громкости и приводим к стерео 48кГц —
+        # иначе тихая/моно озвучка плохо слышна на телефонах и части плееров.
+        "-af", "loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000",
+        "-ac", "2",
         "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-shortest",
+        "-c:a", "aac", "-b:a", "192k", "-shortest",
         str(out_path),
     ])
     return out_path
@@ -158,8 +175,9 @@ def generate(video_id: int, topic: str) -> Path:
     print(f"[generate] [{video_id}] сценарий: {script['title']}")
 
     narration = " ".join(script["segments"])
-    voice_path = config.OUTPUTS_DIR / f"{video_id}_voice.mp3"
-    asyncio.run(_tts(narration, voice_path))
+    ext = "wav" if config.TTS_ENGINE == "piper" else "mp3"
+    voice_path = config.OUTPUTS_DIR / f"{video_id}_voice.{ext}"
+    _synthesize(narration, voice_path)
 
     background = _pick_background(row)
     out_path = config.OUTPUTS_DIR / f"{video_id}_final.mp4"

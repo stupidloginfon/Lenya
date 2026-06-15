@@ -24,7 +24,10 @@ OUTPUTS_DIR = DATA_DIR / "outputs"         # сгенерированные ви
 DB_PATH = DATA_DIR / "lenya.db"
 
 # --- Озвучка ---
-TTS_VOICE = os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
+# Движок: "edge" — нейроголоса Microsoft (нужна сеть), "piper" — офлайн-нейросеть.
+TTS_ENGINE = os.getenv("TTS_ENGINE", "edge")
+TTS_VOICE = os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")   # для edge
+PIPER_MODEL = os.getenv("PIPER_MODEL", "")                 # путь к .onnx для piper
 
 # --- Реклама ---
 AD_TEXT = os.getenv("AD_TEXT", "")
