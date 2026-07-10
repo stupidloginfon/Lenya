@@ -2,228 +2,634 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пацаны, привет! 🍺🍢</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Пивной кликер Вадима 🍺</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body { height: 100%; overflow: hidden; }
-
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
   body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
     background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a2a3a);
     background-size: 400% 400%;
-    animation: bgShift 15s ease infinite;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    position: relative;
+    animation: bgShift 18s ease infinite;
+    color:#fff;
+    overflow-x:hidden;
+    user-select:none; -webkit-user-select:none;
+    touch-action: manipulation;
   }
+  @keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
-  @keyframes bgShift {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  /* угольки от мангала */
   .ember {
-    position: absolute;
-    bottom: -30px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #ffb347 0%, #ff5e13 60%, transparent 100%);
-    opacity: 0;
-    animation: rise linear infinite;
-    pointer-events: none;
-    filter: blur(1px);
+    position:fixed; bottom:-30px; border-radius:50%;
+    background: radial-gradient(circle,#ffb347 0%,#ff5e13 60%,transparent 100%);
+    opacity:0; animation:rise linear infinite; pointer-events:none; filter:blur(1px); z-index:0;
   }
-
   @keyframes rise {
-    0%   { transform: translateY(0) translateX(0) scale(1); opacity: .9; }
-    50%  { transform: translateY(-55vh) translateX(30px) scale(.7); opacity: .5; }
-    100% { transform: translateY(-110vh) translateX(-20px) scale(.3); opacity: 0; }
+    0%{transform:translateY(0) translateX(0) scale(1);opacity:.8}
+    50%{transform:translateY(-55vh) translateX(30px) scale(.7);opacity:.4}
+    100%{transform:translateY(-110vh) translateX(-20px) scale(.3);opacity:0}
   }
 
-  .card {
-    text-align: center;
-    padding: 60px 50px;
-    border-radius: 30px;
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-    max-width: 640px;
-    width: 92%;
-    z-index: 2;
-    animation: popIn .8s cubic-bezier(.2, 1.4, .4, 1);
+  .wrap { position:relative; z-index:2; max-width:1050px; margin:0 auto; padding:16px 12px 60px; }
+
+  header { text-align:center; margin-bottom:14px; }
+  header h1 {
+    font-size:clamp(1.6rem,5.5vw,2.6rem); font-weight:900;
+    background:linear-gradient(90deg,#ffd86f,#fc6262,#ffd86f); background-size:200% auto;
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    animation:shine 3s linear infinite;
+  }
+  @keyframes shine { to { background-position:200% center; } }
+  header p { color:rgba(255,255,255,.55); font-size:.95rem; margin-top:2px; }
+
+  .game { display:grid; grid-template-columns: 1fr 1.15fr; gap:16px; }
+  @media (max-width:760px){ .game { grid-template-columns:1fr; } }
+
+  .panel {
+    background:rgba(255,255,255,.07);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:24px; box-shadow:0 20px 50px rgba(0,0,0,.45);
+    padding:20px;
   }
 
-  @keyframes popIn {
-    from { transform: scale(.6) translateY(60px); opacity: 0; }
-    to   { transform: scale(1) translateY(0); opacity: 1; }
+  /* ===== левая панель — кружка ===== */
+  .clicker { text-align:center; display:flex; flex-direction:column; align-items:center; }
+  .beer-count { font-size:clamp(1.7rem,6vw,2.4rem); font-weight:900; color:#ffd86f; line-height:1.1; }
+  .beer-label { color:rgba(255,255,255,.7); margin-bottom:4px; }
+  .bps-line { color:rgba(255,255,255,.55); font-size:.95rem; margin-bottom:14px; }
+
+  .frenzy-banner {
+    display:none; margin-bottom:10px; padding:8px 18px; border-radius:40px;
+    background:linear-gradient(90deg,#ff9a44,#fc6262); font-weight:800; font-size:1rem;
+    animation:pulseGlow 1s ease-in-out infinite;
+  }
+  @keyframes pulseGlow { 0%,100%{box-shadow:0 0 10px rgba(252,98,98,.6)} 50%{box-shadow:0 0 30px rgba(252,98,98,1)} }
+
+  .mug-zone {
+    width:min(62vw,270px); height:min(62vw,270px); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 35% 30%, rgba(255,216,111,.25), rgba(255,255,255,.04) 65%);
+    border:2px solid rgba(255,216,111,.35);
+    box-shadow:0 0 55px rgba(255,180,71,.25), inset 0 0 40px rgba(255,216,111,.08);
+    cursor:pointer; transition:transform .08s;
+    font-size:min(34vw,150px);
+    position:relative;
+  }
+  .mug-zone:active { transform:scale(.93); }
+  .mug-zone .mug { display:inline-block; animation:mugSway 3s ease-in-out infinite; pointer-events:none; }
+  @keyframes mugSway { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+
+  .click-power { margin-top:14px; color:rgba(255,255,255,.55); font-size:.9rem; }
+
+  .floater {
+    position:fixed; font-weight:900; color:#ffd86f; pointer-events:none; z-index:50;
+    text-shadow:0 2px 8px rgba(0,0,0,.6); animation:floatUp 1s ease-out forwards; font-size:1.4rem;
+  }
+  @keyframes floatUp { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-90px);opacity:0} }
+
+  /* ===== правая панель — вкладки ===== */
+  .tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .tab-btn {
+    flex:1; min-width:70px; padding:10px 6px; border:none; border-radius:14px; cursor:pointer;
+    background:rgba(255,255,255,.08); color:rgba(255,255,255,.7); font-weight:700; font-size:.9rem;
+    font-family:inherit; transition:background .15s;
+  }
+  .tab-btn.active { background:linear-gradient(135deg,#ffd86f,#ff9a44); color:#1a1a2e; }
+
+  .tab-page { display:none; max-height:62vh; overflow-y:auto; padding-right:4px; }
+  .tab-page.active { display:block; }
+  .tab-page::-webkit-scrollbar { width:6px; }
+  .tab-page::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:3px; }
+
+  .buy-amount { display:flex; gap:6px; margin-bottom:10px; }
+  .buy-amount button {
+    padding:6px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.2);
+    background:transparent; color:rgba(255,255,255,.6); cursor:pointer; font-family:inherit; font-weight:700;
+  }
+  .buy-amount button.active { background:rgba(255,216,111,.2); color:#ffd86f; border-color:#ffd86f; }
+
+  .shop-item, .upg-item {
+    display:flex; align-items:center; gap:12px; width:100%;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    border-radius:16px; padding:12px 14px; margin-bottom:8px; cursor:pointer;
+    transition:background .15s, transform .1s; text-align:left; color:#fff; font-family:inherit;
+  }
+  .shop-item:active, .upg-item:active { transform:scale(.98); }
+  .shop-item:not(.locked):hover, .upg-item:not(.locked):hover { background:rgba(255,216,111,.12); }
+  .shop-item.locked, .upg-item.locked { opacity:.45; cursor:default; }
+
+  .item-icon { font-size:2rem; width:44px; text-align:center; flex-shrink:0; }
+  .item-info { flex:1; min-width:0; }
+  .item-name { font-weight:800; font-size:.98rem; }
+  .item-desc { font-size:.78rem; color:rgba(255,255,255,.55); }
+  .item-right { text-align:right; flex-shrink:0; }
+  .item-cost { color:#ffd86f; font-weight:800; font-size:.95rem; white-space:nowrap; }
+  .item-count { color:rgba(255,255,255,.45); font-size:.85rem; }
+
+  /* ачивки */
+  .ach-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .ach-card {
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:14px;
+    padding:12px 10px; text-align:center;
+  }
+  .ach-card.locked { opacity:.35; filter:grayscale(1); }
+  .ach-card .a-icon { font-size:1.7rem; }
+  .ach-card .a-name { font-weight:800; font-size:.85rem; margin-top:4px; }
+  .ach-card .a-desc { font-size:.72rem; color:rgba(255,255,255,.55); margin-top:2px; }
+
+  /* профиль */
+  .stat-row { display:flex; justify-content:space-between; padding:9px 4px; border-bottom:1px solid rgba(255,255,255,.08); font-size:.95rem; }
+  .stat-row b { color:#ffd86f; }
+  .prestige-box { margin-top:16px; background:rgba(255,216,111,.08); border:1px solid rgba(255,216,111,.3); border-radius:16px; padding:14px; text-align:center; }
+  .prestige-box p { font-size:.85rem; color:rgba(255,255,255,.65); margin-bottom:10px; }
+
+  .btn-gold {
+    padding:12px 26px; border:none; border-radius:40px; cursor:pointer;
+    background:linear-gradient(135deg,#ffd86f,#ff9a44); color:#1a1a2e; font-weight:800; font-size:1rem;
+    font-family:inherit; box-shadow:0 8px 25px rgba(255,154,68,.35); transition:transform .12s;
+  }
+  .btn-gold:hover { transform:translateY(-2px); }
+  .btn-gold:disabled { opacity:.4; cursor:default; transform:none; }
+  .btn-danger {
+    margin-top:14px; padding:8px 18px; border-radius:30px; border:1px solid rgba(252,98,98,.5);
+    background:transparent; color:#fc6262; cursor:pointer; font-family:inherit; font-size:.85rem;
   }
 
-  h1 {
-    font-size: clamp(2.2rem, 7vw, 4rem);
-    font-weight: 900;
-    background: linear-gradient(90deg, #ffd86f, #fc6262, #ffd86f);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 3s linear infinite;
-    margin-bottom: 10px;
+  /* золотое пиво */
+  .gold-beer {
+    position:fixed; font-size:3.2rem; z-index:60; cursor:pointer;
+    animation:goldPulse 1s ease-in-out infinite;
+    filter:drop-shadow(0 0 14px #ffd86f);
   }
+  @keyframes goldPulse { 0%,100%{transform:scale(1) rotate(-8deg)} 50%{transform:scale(1.25) rotate(8deg)} }
 
-  @keyframes shine {
-    to { background-position: 200% center; }
+  /* тосты */
+  #toasts { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:100; display:flex; flex-direction:column; gap:8px; align-items:center; width:92%; max-width:420px; }
+  .toast {
+    background:rgba(20,18,40,.95); border:1px solid rgba(255,216,111,.5); color:#fff;
+    padding:12px 20px; border-radius:16px; font-size:.92rem; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.5); animation:toastIn .3s ease, toastOut .4s ease 3.6s forwards;
+    width:100%;
   }
+  @keyframes toastIn { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes toastOut { to{transform:translateY(20px);opacity:0} }
 
-  .wave { display: inline-block; animation: wave 1.6s ease-in-out infinite; transform-origin: 70% 70%; }
-  @keyframes wave {
-    0%, 100% { transform: rotate(0deg); }
-    25%      { transform: rotate(20deg); }
-    75%      { transform: rotate(-12deg); }
-  }
-
-  .subtitle {
-    font-size: clamp(1.2rem, 3.5vw, 1.7rem);
-    color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 35px;
-    letter-spacing: .5px;
-  }
-
-  .icons {
-    font-size: clamp(3rem, 10vw, 5rem);
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-bottom: 40px;
-  }
-
-  .icons span {
-    display: inline-block;
-    animation: bounce 2s ease-in-out infinite;
-    cursor: default;
-    transition: transform .2s;
-  }
-  .icons span:nth-child(2) { animation-delay: .3s; }
-  .icons span:nth-child(3) { animation-delay: .6s; }
-  .icons span:hover { transform: scale(1.35) rotate(-10deg); }
-
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-18px); }
-  }
-
-  .btn {
-    font-size: 1.3rem;
-    font-weight: 700;
-    padding: 16px 42px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    color: #1a1a2e;
-    background: linear-gradient(135deg, #ffd86f, #ff9a44);
-    box-shadow: 0 10px 30px rgba(255, 154, 68, .4);
-    transition: transform .15s, box-shadow .15s;
-    font-family: inherit;
-  }
-  .btn:hover  { transform: translateY(-3px) scale(1.04); box-shadow: 0 15px 40px rgba(255, 154, 68, .6); }
-  .btn:active { transform: translateY(1px) scale(.97); }
-
-  .counter {
-    margin-top: 18px;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
-    min-height: 1.4em;
-  }
-
-  /* летящее пиво по клику */
-  .fly {
-    position: fixed;
-    font-size: 2.2rem;
-    pointer-events: none;
-    z-index: 10;
-    animation: fly 1.4s ease-out forwards;
-  }
-  @keyframes fly {
-    0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(-45vh) scale(1.8) rotate(360deg); opacity: 0; }
-  }
-
-  footer {
-    position: absolute;
-    bottom: 18px;
-    width: 100%;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.35);
-    font-size: .85rem;
-    z-index: 2;
-  }
+  footer { text-align:center; color:rgba(255,255,255,.3); font-size:.8rem; margin-top:26px; }
 </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>Пацаны, привет! <span class="wave">👋</span></h1>
-    <p class="subtitle">Тут у нас пиво и шашлыки — залетайте</p>
-    <div class="icons">
-      <span>🍺</span><span>🔥</span><span>🍢</span>
+<div class="wrap">
+  <header>
+    <h1>🍻 Пивной кликер Вадима</h1>
+    <p>Тапай по кружке. Строй пивную империю. Кайфуй.</p>
+  </header>
+
+  <div class="game">
+    <!-- ЛЕВО: кликалка -->
+    <div class="panel clicker">
+      <div class="beer-count" id="beerCount">0</div>
+      <div class="beer-label" id="beerLabel">кружек пива</div>
+      <div class="bps-line">в секунду: <span id="bps">0</span> 🍺</div>
+      <div class="frenzy-banner" id="frenzyBanner">🔥 ЗАПОЙ ×7! <span id="frenzyTime"></span>с</div>
+      <div class="mug-zone" id="mug"><span class="mug">🍺</span></div>
+      <div class="click-power">за клик: <span id="clickPower">1</span> 🍺</div>
     </div>
-    <button class="btn" id="nalivai">Наливай! 🍻</button>
-    <div class="counter" id="counter"></div>
+
+    <!-- ПРАВО: вкладки -->
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="shop">🏪 Магазин</button>
+        <button class="tab-btn" data-tab="upgrades">⚡ Апгрейды</button>
+        <button class="tab-btn" data-tab="achievements">🏆 Ачивки</button>
+        <button class="tab-btn" data-tab="profile">👤 Вадим</button>
+      </div>
+
+      <div class="tab-page active" id="tab-shop">
+        <div class="buy-amount">
+          <span style="color:rgba(255,255,255,.5);font-size:.85rem;align-self:center;margin-right:4px;">Покупать:</span>
+          <button data-amt="1" class="active">×1</button>
+          <button data-amt="10">×10</button>
+          <button data-amt="50">×50</button>
+        </div>
+        <div id="shopList"></div>
+      </div>
+
+      <div class="tab-page" id="tab-upgrades">
+        <div id="upgList"></div>
+        <p id="upgEmpty" style="color:rgba(255,255,255,.4);text-align:center;padding:20px;">Пока пусто — накликай ещё пива 🍺</p>
+      </div>
+
+      <div class="tab-page" id="tab-achievements">
+        <div class="ach-grid" id="achGrid"></div>
+      </div>
+
+      <div class="tab-page" id="tab-profile">
+        <div class="stat-row"><span>Всего напито за всё время</span><b id="stTotal">0</b></div>
+        <div class="stat-row"><span>Кликов сделано</span><b id="stClicks">0</b></div>
+        <div class="stat-row"><span>Производство в секунду</span><b id="stBps">0</b></div>
+        <div class="stat-row"><span>Зданий построено</span><b id="stBuild">0</b></div>
+        <div class="stat-row"><span>Золотых кружек поймано</span><b id="stGold">0</b></div>
+        <div class="stat-row"><span>Ачивок открыто</span><b id="stAch">0</b></div>
+        <div class="stat-row"><span>Времени в игре</span><b id="stTime">0</b></div>
+        <div class="stat-row"><span>🎖️ Медали похмелья (+10% каждая)</span><b id="stMedals">0</b></div>
+
+        <div class="prestige-box">
+          <div style="font-weight:800;">🌅 Похмельный сброс</div>
+          <p>Обнуляешь всё пиво и здания, но получаешь медали похмелья — постоянный буст +10% к производству за каждую. Медалей доступно: <b id="prestigeGain" style="color:#ffd86f">0</b></p>
+          <button class="btn-gold" id="prestigeBtn" disabled>Уйти в похмелье</button>
+        </div>
+
+        <div style="text-align:center;">
+          <button class="btn-danger" id="wipeBtn">💀 Снести весь прогресс</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <footer>сайт сделан по приколу &middot; шашлык согласован ✅</footer>
+  <footer>сделано специально для Вадима 🍢 · прогресс сохраняется сам</footer>
+</div>
+
+<div id="toasts"></div>
 
 <script>
-  // угольки от мангала
-  for (let i = 0; i < 25; i++) {
-    const e = document.createElement('div');
-    e.className = 'ember';
-    const size = 4 + Math.random() * 8;
-    e.style.width = size + 'px';
-    e.style.height = size + 'px';
-    e.style.left = Math.random() * 100 + 'vw';
-    e.style.animationDuration = 4 + Math.random() * 6 + 's';
-    e.style.animationDelay = Math.random() * 8 + 's';
-    document.body.appendChild(e);
+/* ================== ДАННЫЕ ================== */
+const BUILDINGS = [
+  {id:'ogur',  icon:'🥒', name:'Огурчик на закуску',      desc:'Хрустит и как-то добывает пиво', cost:15,      bps:0.1},
+  {id:'larek', icon:'🛒', name:'Ларёк у дома',            desc:'Классика жанра, работает 24/7',  cost:100,     bps:1},
+  {id:'mangal',icon:'🔥', name:'Мангал во дворе',         desc:'Где шашлык — там и пиво',        cost:1100,    bps:8},
+  {id:'kent',  icon:'🚗', name:'Кент на девятке',         desc:'Подвозит ящиками, брат',         cost:12000,   bps:47},
+  {id:'tochka',icon:'🍻', name:'Пивная точка',            desc:'Разливное, свежее, своё',        cost:130000,  bps:260},
+  {id:'craft', icon:'🏭', name:'Крафтовая пивоварня',     desc:'IPA, стауты, вот это всё',       cost:1.4e6,   bps:1400},
+  {id:'fura',  icon:'🚛', name:'Фура с пивом',            desc:'Едет прямо к Вадиму',            cost:2e7,     bps:7800},
+  {id:'cist',  icon:'🛢️', name:'Цистерна',                desc:'Промышленный объём',             cost:3.3e8,   bps:44000},
+  {id:'nii',   icon:'🧪', name:'НИИ Пива им. Вадима',     desc:'Учёные вывели идеальную пену',   cost:5.1e9,   bps:260000},
+  {id:'mars',  icon:'🚀', name:'Пивзавод на Марсе',       desc:'Пиво уже межпланетное',          cost:7.5e10,  bps:1.6e6},
+];
+
+const UPGRADES = [
+  {id:'u_hand',  icon:'✋', name:'Вторая рука',        desc:'Сила клика ×2',                    cost:100,   type:'click', mult:2, req:s=>s.totalClicks>=15},
+  {id:'u_mug',   icon:'🍺', name:'Литровая кружка',    desc:'Сила клика ×2',                    cost:1500,  type:'click', mult:2, req:s=>s.totalClicks>=100},
+  {id:'u_liver', icon:'🫀', name:'Стальная печень',    desc:'Сила клика ×2',                    cost:2e4,   type:'click', mult:2, req:s=>s.totalClicks>=400},
+  {id:'u_gulp',  icon:'😤', name:'Богатырский глоток', desc:'Сила клика ×2',                    cost:3e5,   type:'click', mult:2, req:s=>s.totalClicks>=1000},
+  {id:'u_vadim', icon:'😎', name:'Режим Вадима',       desc:'Клик даёт +1% от производства',    cost:5e6,   type:'clickBps', pct:0.01, req:s=>bps()>=500},
+  {id:'u_vadim2',icon:'🕶️', name:'Вадим разошёлся',    desc:'Клик даёт ещё +4% от производства',cost:5e8,   type:'clickBps', pct:0.04, req:s=>s.upgrades.includes('u_vadim')},
+  {id:'g_cold',  icon:'🧊', name:'Холодное пиво',      desc:'Всё производство ×1.5',            cost:1e5,   type:'global', mult:1.5, req:s=>bps()>=10},
+  {id:'g_friday',icon:'📅', name:'Вечная пятница',     desc:'Всё производство ×2',              cost:1e7,   type:'global', mult:2, req:s=>bps()>=1000},
+  {id:'g_snack', icon:'🍢', name:'Правильная закуска', desc:'Всё производство ×2',              cost:1e9,   type:'global', mult:2, req:s=>bps()>=50000},
+  {id:'g_vadim', icon:'👑', name:'Одобрено Вадимом',   desc:'Всё производство ×2',              cost:1e11,  type:'global', mult:2, req:s=>bps()>=2e6},
+];
+// апгрейды ×2 на каждое здание (открываются при 10 штуках)
+BUILDINGS.forEach(b=>{
+  UPGRADES.push({id:'bx_'+b.id, icon:b.icon, name:b.name+' ×2', desc:'«'+b.name+'» производит вдвое больше', cost:b.cost*150, type:'building', target:b.id, req:s=>(s.buildings[b.id]||0)>=10});
+});
+UPGRADES.sort((a,b)=>a.cost-b.cost);
+
+const ACHIEVEMENTS = [
+  {id:'c1',    icon:'👆', name:'Первый глоток',     desc:'Кликни 1 раз',                cond:s=>s.totalClicks>=1},
+  {id:'c100',  icon:'🖐️', name:'Расклик',           desc:'100 кликов',                  cond:s=>s.totalClicks>=100},
+  {id:'c1k',   icon:'💪', name:'Палец качается',    desc:'1 000 кликов',                cond:s=>s.totalClicks>=1000},
+  {id:'c10k',  icon:'🦾', name:'Марафонец',         desc:'10 000 кликов',               cond:s=>s.totalClicks>=10000},
+  {id:'e100',  icon:'🍺', name:'Сотка',             desc:'Напей 100 пива',              cond:s=>s.totalEarned>=100},
+  {id:'e10k',  icon:'📦', name:'Ящиками пошло',     desc:'Напей 10 тыс. пива',          cond:s=>s.totalEarned>=1e4},
+  {id:'e1m',   icon:'💰', name:'Пивной миллионер',  desc:'Напей 1 млн пива',            cond:s=>s.totalEarned>=1e6},
+  {id:'e1b',   icon:'🏦', name:'Пивной олигарх',    desc:'Напей 1 млрд пива',           cond:s=>s.totalEarned>=1e9},
+  {id:'e1t',   icon:'👑', name:'Царь пива',         desc:'Напей 1 трлн пива',           cond:s=>s.totalEarned>=1e12},
+  {id:'b10',   icon:'🏗️', name:'Застройщик',        desc:'10 зданий',                   cond:s=>totalBuildings()>=10},
+  {id:'b50',   icon:'🏘️', name:'Микрорайон',        desc:'50 зданий',                   cond:s=>totalBuildings()>=50},
+  {id:'b100',  icon:'🌆', name:'Пивная империя',    desc:'100 зданий',                  cond:s=>totalBuildings()>=100},
+  {id:'p10',   icon:'⚙️', name:'Само наливается',   desc:'10 пива в секунду',           cond:s=>bps()>=10},
+  {id:'p1k',   icon:'🏭', name:'Конвейер',          desc:'1 000 пива в секунду',        cond:s=>bps()>=1000},
+  {id:'p100k', icon:'🌊', name:'Пивопровод',        desc:'100 тыс. пива в секунду',     cond:s=>bps()>=1e5},
+  {id:'g1',    icon:'✨', name:'Золотая кружка',    desc:'Поймай золотое пиво',         cond:s=>s.goldClicks>=1},
+  {id:'g5',    icon:'🌟', name:'Ловец удачи',       desc:'Поймай 5 золотых',            cond:s=>s.goldClicks>=5},
+  {id:'ogur1', icon:'🥒', name:'Огурчик!',          desc:'Купи первый огурчик',         cond:s=>(s.buildings.ogur||0)>=1},
+  {id:'mars1', icon:'🚀', name:'Пиво в космосе',    desc:'Построй пивзавод на Марсе',   cond:s=>(s.buildings.mars||0)>=1},
+  {id:'m1',    icon:'🎖️', name:'Похмелье пройдено', desc:'Получи медаль похмелья',      cond:s=>s.medals>=1},
+];
+
+/* ================== СОСТОЯНИЕ ================== */
+const SAVE_KEY = 'vadim-beer-clicker';
+let S = {
+  beer:0, totalEarned:0, allTimeEarned:0, totalClicks:0, goldClicks:0,
+  buildings:{}, upgrades:[], achievements:[], medals:0,
+  playSeconds:0, lastTs:Date.now(), buyAmt:1, frenzyUntil:0,
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){ Object.assign(S, JSON.parse(raw)); }
+  }catch(e){}
+  // офлайн-заработок (50%, максимум 12 часов)
+  const away = (Date.now() - S.lastTs)/1000;
+  if(away > 90 && bps() > 0){
+    const gain = bps() * Math.min(away, 43200) * 0.5;
+    S.beer += gain; S.totalEarned += gain; S.allTimeEarned += gain;
+    setTimeout(()=>toast('😴 Пока тебя не было, накапало ' + fmt(gain) + ' 🍺'), 600);
   }
+}
+function save(){ S.lastTs = Date.now(); try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
 
-  // кнопка "Наливай"
-  const phrases = [
-    'Первая пошла! 🍺',
-    'Ну, за встречу! 🍻',
-    'Мясо уже на углях 🔥',
-    'Шашлык маринуется... 🍢',
-    'Кто последний — тот моет мангал 😄',
-    'Держим краник! 🚰',
-    'ЗА ПАЦАНОВ! 💪'
-  ];
-  let clicks = 0;
-  const btn = document.getElementById('nalivai');
-  const counter = document.getElementById('counter');
+/* ================== ФОРМУЛЫ ================== */
+function frenzyOn(){ return Date.now() < S.frenzyUntil; }
+function prodMult(){
+  let m = 1 + S.medals * 0.1;
+  UPGRADES.forEach(u=>{ if(u.type==='global' && S.upgrades.includes(u.id)) m *= u.mult; });
+  if(frenzyOn()) m *= 7;
+  return m;
+}
+function buildingMult(id){
+  let m = 1;
+  UPGRADES.forEach(u=>{ if(u.type==='building' && u.target===id && S.upgrades.includes(u.id)) m *= 2; });
+  return m;
+}
+function bps(){
+  let t = 0;
+  BUILDINGS.forEach(b=>{ t += (S.buildings[b.id]||0) * b.bps * buildingMult(b.id); });
+  return t * prodMult();
+}
+function clickPower(){
+  let base = 1;
+  UPGRADES.forEach(u=>{ if(u.type==='click' && S.upgrades.includes(u.id)) base *= u.mult; });
+  base *= (1 + S.medals * 0.1);
+  if(frenzyOn()) base *= 7;
+  let pct = 0;
+  UPGRADES.forEach(u=>{ if(u.type==='clickBps' && S.upgrades.includes(u.id)) pct += u.pct; });
+  return base + bps() * pct;
+}
+function buildingCost(b, n){
+  const owned = S.buildings[b.id]||0;
+  // сумма геометрической прогрессии: base*1.15^owned * (1.15^n - 1)/0.15
+  return b.cost * Math.pow(1.15, owned) * (Math.pow(1.15, n) - 1) / 0.15;
+}
+function totalBuildings(){ return Object.values(S.buildings).reduce((a,b)=>a+b,0); }
+function prestigePotential(){ return Math.max(0, Math.floor(Math.cbrt(S.allTimeEarned / 1e8)) - S.medals); }
 
-  btn.addEventListener('click', (ev) => {
-    clicks++;
-    counter.textContent = phrases[Math.min(clicks - 1, phrases.length - 1)] + '  (кружек: ' + clicks + ')';
+/* ================== УТИЛИТЫ ================== */
+function fmt(n){
+  if(!isFinite(n)) return '∞';
+  if(n < 1000) return (n < 10 && n % 1 !== 0) ? n.toFixed(1) : Math.floor(n).toString();
+  const units = ['тыс','млн','млрд','трлн','квадр','квинт','секст'];
+  let u = -1;
+  while(n >= 1000 && u < units.length-1){ n /= 1000; u++; }
+  return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + ' ' + units[u];
+}
+function plural(n, one, few, many){
+  n = Math.floor(n) % 100;
+  if(n >= 11 && n <= 14) return many;
+  n %= 10;
+  if(n === 1) return one;
+  if(n >= 2 && n <= 4) return few;
+  return many;
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 4200);
+}
+function fmtTime(sec){
+  sec = Math.floor(sec);
+  const d = Math.floor(sec/86400), h = Math.floor(sec%86400/3600), m = Math.floor(sec%3600/60);
+  if(d) return d+'д '+h+'ч';
+  if(h) return h+'ч '+m+'м';
+  return m+'м '+(sec%60)+'с';
+}
 
-    // фонтан из пива и шашлыков
-    const emojis = ['🍺', '🍻', '🍢', '🔥', '🥩'];
-    for (let i = 0; i < 6; i++) {
-      const f = document.createElement('div');
-      f.className = 'fly';
-      f.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-      f.style.left = (ev.clientX - 20 + (Math.random() - 0.5) * 120) + 'px';
-      f.style.top = (ev.clientY - 20) + 'px';
-      f.style.animationDelay = (Math.random() * 0.2) + 's';
-      document.body.appendChild(f);
-      setTimeout(() => f.remove(), 1800);
+/* ================== UI: МАГАЗИН ================== */
+const shopRefs = {};
+function buildShop(){
+  const list = document.getElementById('shopList');
+  BUILDINGS.forEach(b=>{
+    const el = document.createElement('button');
+    el.className = 'shop-item';
+    el.innerHTML = '<div class="item-icon">'+b.icon+'</div>'
+      + '<div class="item-info"><div class="item-name">'+b.name+'</div>'
+      + '<div class="item-desc">'+b.desc+' · <span class="i-bps"></span> 🍺/с</div></div>'
+      + '<div class="item-right"><div class="item-cost i-cost"></div><div class="item-count i-count"></div></div>';
+    el.addEventListener('click', ()=>buyBuilding(b));
+    list.appendChild(el);
+    shopRefs[b.id] = { el, cost:el.querySelector('.i-cost'), count:el.querySelector('.i-count'), bps:el.querySelector('.i-bps') };
+  });
+}
+function buyBuilding(b){
+  const n = S.buyAmt;
+  const cost = buildingCost(b, n);
+  if(S.beer < cost) return;
+  S.beer -= cost;
+  S.buildings[b.id] = (S.buildings[b.id]||0) + n;
+  refreshUI(true);
+}
+
+/* ================== UI: АПГРЕЙДЫ ================== */
+const upgRendered = {};
+function refreshUpgrades(){
+  const list = document.getElementById('upgList');
+  let visible = 0;
+  UPGRADES.forEach(u=>{
+    if(S.upgrades.includes(u.id)){ if(upgRendered[u.id]){ upgRendered[u.id].remove(); delete upgRendered[u.id]; } return; }
+    const show = u.req(S) || S.beer >= u.cost;
+    if(show && !upgRendered[u.id]){
+      const el = document.createElement('button');
+      el.className = 'upg-item';
+      el.innerHTML = '<div class="item-icon">'+u.icon+'</div>'
+        + '<div class="item-info"><div class="item-name">'+u.name+'</div><div class="item-desc">'+u.desc+'</div></div>'
+        + '<div class="item-right"><div class="item-cost">'+fmt(u.cost)+' 🍺</div></div>';
+      el.addEventListener('click', ()=>{
+        if(S.beer < u.cost || S.upgrades.includes(u.id)) return;
+        S.beer -= u.cost; S.upgrades.push(u.id);
+        toast(u.icon+' Куплено: '+u.name);
+        refreshUI(true);
+      });
+      list.appendChild(el);
+      upgRendered[u.id] = el;
+    }
+    if(upgRendered[u.id]){
+      visible++;
+      upgRendered[u.id].classList.toggle('locked', S.beer < u.cost);
     }
   });
+  document.getElementById('upgEmpty').style.display = visible ? 'none' : 'block';
+}
+
+/* ================== UI: АЧИВКИ ================== */
+const achRefs = {};
+function buildAch(){
+  const grid = document.getElementById('achGrid');
+  ACHIEVEMENTS.forEach(a=>{
+    const el = document.createElement('div');
+    el.className = 'ach-card locked';
+    el.innerHTML = '<div class="a-icon">'+a.icon+'</div><div class="a-name">'+a.name+'</div><div class="a-desc">'+a.desc+'</div>';
+    grid.appendChild(el);
+    achRefs[a.id] = el;
+  });
+}
+function checkAch(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(!S.achievements.includes(a.id) && a.cond(S)){
+      S.achievements.push(a.id);
+      achRefs[a.id].classList.remove('locked');
+      toast('🏆 Ачивка: ' + a.name + '!');
+    }
+  });
+}
+
+/* ================== КЛИК ПО КРУЖКЕ ================== */
+const mug = document.getElementById('mug');
+mug.addEventListener('pointerdown', (ev)=>{
+  const gain = clickPower();
+  S.beer += gain; S.totalEarned += gain; S.allTimeEarned += gain; S.totalClicks++;
+  const f = document.createElement('div');
+  f.className = 'floater';
+  f.textContent = '+' + fmt(gain);
+  f.style.left = (ev.clientX - 20 + (Math.random()-0.5)*40) + 'px';
+  f.style.top = (ev.clientY - 30) + 'px';
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(), 1000);
+});
+
+/* ================== ЗОЛОТОЕ ПИВО ================== */
+function scheduleGold(){ setTimeout(spawnGold, 45000 + Math.random()*75000); }
+function spawnGold(){
+  const g = document.createElement('div');
+  g.className = 'gold-beer'; g.textContent = '🍺';
+  g.style.left = (8 + Math.random()*75) + 'vw';
+  g.style.top = (15 + Math.random()*60) + 'vh';
+  let taken = false;
+  g.addEventListener('pointerdown', ()=>{
+    if(taken) return; taken = true;
+    S.goldClicks++;
+    if(Math.random() < 0.5){
+      const gain = Math.min(S.beer * 0.15, bps() * 900) + 13;
+      S.beer += gain; S.totalEarned += gain; S.allTimeEarned += gain;
+      toast('✨ Золотое пиво! +' + fmt(gain) + ' 🍺');
+    } else {
+      S.frenzyUntil = Date.now() + 30000;
+      toast('🔥 ЗАПОЙ! Производство ×7 на 30 секунд!');
+    }
+    g.remove();
+  });
+  document.body.appendChild(g);
+  setTimeout(()=>{ g.remove(); }, 13000);
+  scheduleGold();
+}
+
+/* ================== ВКЛАДКИ И КНОПКИ ================== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+document.querySelectorAll('.buy-amount button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.buy-amount button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    S.buyAmt = parseInt(btn.dataset.amt);
+    refreshUI(true);
+  });
+});
+document.getElementById('prestigeBtn').addEventListener('click', ()=>{
+  const gain = prestigePotential();
+  if(gain <= 0) return;
+  if(!confirm('Уйти в похмелье? Всё пиво и здания сгорят, но получишь ' + gain + ' ' + plural(gain,'медаль','медали','медалей') + ' (+' + gain*10 + '% навсегда).')) return;
+  S.medals += gain;
+  S.beer = 0; S.totalEarned = 0; S.buildings = {}; S.upgrades = []; S.frenzyUntil = 0;
+  Object.values(upgRendered).forEach(el=>el.remove());
+  for(const k in upgRendered) delete upgRendered[k];
+  toast('🌅 Похмелье пройдено! +' + gain + ' 🎖️');
+  refreshUI(true); save();
+});
+document.getElementById('wipeBtn').addEventListener('click', ()=>{
+  if(!confirm('Точно снести ВЕСЬ прогресс Вадима? Это навсегда!')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+});
+
+/* ================== ОБНОВЛЕНИЕ ЭКРАНА ================== */
+function refreshUI(full){
+  document.getElementById('beerCount').textContent = fmt(S.beer);
+  document.getElementById('beerLabel').textContent = plural(S.beer,'кружка пива','кружки пива','кружек пива');
+  document.getElementById('bps').textContent = fmt(bps());
+  document.getElementById('clickPower').textContent = fmt(clickPower());
+
+  const fb = document.getElementById('frenzyBanner');
+  if(frenzyOn()){
+    fb.style.display = 'block';
+    document.getElementById('frenzyTime').textContent = Math.ceil((S.frenzyUntil - Date.now())/1000);
+  } else fb.style.display = 'none';
+
+  BUILDINGS.forEach(b=>{
+    const r = shopRefs[b.id];
+    const cost = buildingCost(b, S.buyAmt);
+    r.cost.textContent = fmt(cost) + ' 🍺';
+    r.count.textContent = (S.buildings[b.id]||0) + ' шт';
+    r.bps.textContent = fmt(b.bps * buildingMult(b.id) * prodMult());
+    r.el.classList.toggle('locked', S.beer < cost);
+  });
+
+  refreshUpgrades();
+
+  if(full){
+    document.getElementById('stTotal').textContent = fmt(S.allTimeEarned);
+    document.getElementById('stClicks').textContent = fmt(S.totalClicks);
+    document.getElementById('stBps').textContent = fmt(bps());
+    document.getElementById('stBuild').textContent = totalBuildings();
+    document.getElementById('stGold').textContent = S.goldClicks;
+    document.getElementById('stAch').textContent = S.achievements.length + ' / ' + ACHIEVEMENTS.length;
+    document.getElementById('stTime').textContent = fmtTime(S.playSeconds);
+    document.getElementById('stMedals').textContent = S.medals;
+    const gain = prestigePotential();
+    document.getElementById('prestigeGain').textContent = gain;
+    document.getElementById('prestigeBtn').disabled = gain <= 0;
+  }
+}
+
+/* ================== ЦИКЛ ================== */
+let last = Date.now();
+setInterval(()=>{
+  const now = Date.now();
+  const dt = (now - last)/1000; last = now;
+  const gain = bps() * dt;
+  S.beer += gain; S.totalEarned += gain; S.allTimeEarned += gain;
+  S.playSeconds += dt;
+}, 100);
+
+let uiTick = 0;
+setInterval(()=>{
+  uiTick++;
+  refreshUI(uiTick % 4 === 0);
+  if(uiTick % 4 === 0) checkAch();
+}, 250);
+
+setInterval(save, 15000);
+window.addEventListener('beforeunload', save);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); });
+
+/* ================== СТАРТ ================== */
+for(let i = 0; i < 14; i++){
+  const e = document.createElement('div');
+  e.className = 'ember';
+  const size = 4 + Math.random()*7;
+  e.style.width = size+'px'; e.style.height = size+'px';
+  e.style.left = Math.random()*100+'vw';
+  e.style.animationDuration = 5 + Math.random()*6 + 's';
+  e.style.animationDelay = Math.random()*8 + 's';
+  document.body.appendChild(e);
+}
+
+load();
+buildShop();
+buildAch();
+S.achievements.forEach(id=>{ if(achRefs[id]) achRefs[id].classList.remove('locked'); });
+document.querySelectorAll('.buy-amount button').forEach(b=>b.classList.toggle('active', parseInt(b.dataset.amt)===S.buyAmt));
+refreshUI(true);
+scheduleGold();
+setTimeout(()=>toast('🍻 Здарова, Вадим! Тапай по кружке!'), 800);
 </script>
 </body>
 </html>
