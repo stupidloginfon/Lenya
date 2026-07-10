@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пацаны, привет! 🍺🍢</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a2a3a);
+    background-size: 400% 400%;
+    animation: bgShift 15s ease infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    position: relative;
+  }
+
+  @keyframes bgShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* угольки от мангала */
+  .ember {
+    position: absolute;
+    bottom: -30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffb347 0%, #ff5e13 60%, transparent 100%);
+    opacity: 0;
+    animation: rise linear infinite;
+    pointer-events: none;
+    filter: blur(1px);
+  }
+
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: .9; }
+    50%  { transform: translateY(-55vh) translateX(30px) scale(.7); opacity: .5; }
+    100% { transform: translateY(-110vh) translateX(-20px) scale(.3); opacity: 0; }
+  }
+
+  .card {
+    text-align: center;
+    padding: 60px 50px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    max-width: 640px;
+    width: 92%;
+    z-index: 2;
+    animation: popIn .8s cubic-bezier(.2, 1.4, .4, 1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(.6) translateY(60px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 7vw, 4rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, #ffd86f, #fc6262, #ffd86f);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+    margin-bottom: 10px;
+  }
+
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+
+  .wave { display: inline-block; animation: wave 1.6s ease-in-out infinite; transform-origin: 70% 70%; }
+  @keyframes wave {
+    0%, 100% { transform: rotate(0deg); }
+    25%      { transform: rotate(20deg); }
+    75%      { transform: rotate(-12deg); }
+  }
+
+  .subtitle {
+    font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 35px;
+    letter-spacing: .5px;
+  }
+
+  .icons {
+    font-size: clamp(3rem, 10vw, 5rem);
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+
+  .icons span {
+    display: inline-block;
+    animation: bounce 2s ease-in-out infinite;
+    cursor: default;
+    transition: transform .2s;
+  }
+  .icons span:nth-child(2) { animation-delay: .3s; }
+  .icons span:nth-child(3) { animation-delay: .6s; }
+  .icons span:hover { transform: scale(1.35) rotate(-10deg); }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-18px); }
+  }
+
+  .btn {
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding: 16px 42px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    color: #1a1a2e;
+    background: linear-gradient(135deg, #ffd86f, #ff9a44);
+    box-shadow: 0 10px 30px rgba(255, 154, 68, .4);
+    transition: transform .15s, box-shadow .15s;
+    font-family: inherit;
+  }
+  .btn:hover  { transform: translateY(-3px) scale(1.04); box-shadow: 0 15px 40px rgba(255, 154, 68, .6); }
+  .btn:active { transform: translateY(1px) scale(.97); }
+
+  .counter {
+    margin-top: 18px;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    min-height: 1.4em;
+  }
+
+  /* летящее пиво по клику */
+  .fly {
+    position: fixed;
+    font-size: 2.2rem;
+    pointer-events: none;
+    z-index: 10;
+    animation: fly 1.4s ease-out forwards;
+  }
+  @keyframes fly {
+    0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-45vh) scale(1.8) rotate(360deg); opacity: 0; }
+  }
+
+  footer {
+    position: absolute;
+    bottom: 18px;
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: .85rem;
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Пацаны, привет! <span class="wave">👋</span></h1>
+    <p class="subtitle">Тут у нас пиво и шашлыки — залетайте</p>
+    <div class="icons">
+      <span>🍺</span><span>🔥</span><span>🍢</span>
+    </div>
+    <button class="btn" id="nalivai">Наливай! 🍻</button>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <footer>сайт сделан по приколу &middot; шашлык согласован ✅</footer>
+
+<script>
+  // угольки от мангала
+  for (let i = 0; i < 25; i++) {
+    const e = document.createElement('div');
+    e.className = 'ember';
+    const size = 4 + Math.random() * 8;
+    e.style.width = size + 'px';
+    e.style.height = size + 'px';
+    e.style.left = Math.random() * 100 + 'vw';
+    e.style.animationDuration = 4 + Math.random() * 6 + 's';
+    e.style.animationDelay = Math.random() * 8 + 's';
+    document.body.appendChild(e);
+  }
+
+  // кнопка "Наливай"
+  const phrases = [
+    'Первая пошла! 🍺',
+    'Ну, за встречу! 🍻',
+    'Мясо уже на углях 🔥',
+    'Шашлык маринуется... 🍢',
+    'Кто последний — тот моет мангал 😄',
+    'Держим краник! 🚰',
+    'ЗА ПАЦАНОВ! 💪'
+  ];
+  let clicks = 0;
+  const btn = document.getElementById('nalivai');
+  const counter = document.getElementById('counter');
+
+  btn.addEventListener('click', (ev) => {
+    clicks++;
+    counter.textContent = phrases[Math.min(clicks - 1, phrases.length - 1)] + '  (кружек: ' + clicks + ')';
+
+    // фонтан из пива и шашлыков
+    const emojis = ['🍺', '🍻', '🍢', '🔥', '🥩'];
+    for (let i = 0; i < 6; i++) {
+      const f = document.createElement('div');
+      f.className = 'fly';
+      f.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      f.style.left = (ev.clientX - 20 + (Math.random() - 0.5) * 120) + 'px';
+      f.style.top = (ev.clientY - 20) + 'px';
+      f.style.animationDelay = (Math.random() * 0.2) + 's';
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 1800);
+    }
+  });
+</script>
+</body>
+</html>
